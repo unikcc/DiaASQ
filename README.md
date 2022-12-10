@@ -1,16 +1,19 @@
 <!-- <p align="center"> -->
-<!-- </p> -->
 # DiaASQ
 <a href="https://github.com/unikcc/DiaASQ">
-  <img src="https://img.shields.io/badge/DiaASQ-0.1-blue" alt="pytorch 1.8.1">
+  <img src="https://img.shields.io/badge/DiaASQ-0.1-blue" alt="DiaASQ">
 </a>
 <a href="https://github.com/unikcc/DiaASQ" rel="nofollow">
   <img src="https://img.shields.io/badge/pytorch-1.8.1-green" alt="pytorch 1.8.1">
 </a>
 <a href="https://huggingface.co/docs/transformers/index" rel="nofollow">
-  <img src="https://img.shields.io/badge/transformers-4.24.0-orange" alt="Build Status">
+  <img src="https://img.shields.io/badge/transformers-4.24.0-orange" alt="Transformers">
+</a>
+<a href="https://github.com/unikcc/DiaASQ/blob/master/LICENSE" rel="nofollow">
+  <img src="https://img.shields.io/badge/LICENSE-MIT-cyan" alt="LICENSE">
 </a>
 
+<!-- </p> -->
 This repository contains code(to be done) and data for our paper "DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)"
 
 To clone the repository, please run the following command:
