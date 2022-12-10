@@ -1,0 +1,88 @@
+# cuda
+cuda_index: 2
+seed: 42
+tree_type: 'full'
+
+# Path 
+# lang: en 
+lang: zh
+# bert_path: 'roberta-large'
+# bert_path: 'bert-based-uncased'
+bert_path: chinese-roberta-wwm-ext
+annotation_dir: data/dataset/annotation
+json_path: data/dataset/jsons
+preprocessed_dir: data/preprocessed
+target_dir: data/save
+
+#bert
+use_custome_token: False
+
+roberta-large:
+  bert_path: roberta-large
+  cls: '<s>'
+  sep: '</s>'
+  unk: '<unk>'
+  pad: '<pad>'
+
+bert-based-uncased:
+  bert_path: bert-base-uncased
+  cls: '[CLS]'
+  sep: '[SEP]'
+  unk: '[UNK]'
+  pad: '[PAD]'
+
+chinese-roberta-wwm-ext:
+  bert_path: hfl/chinese-roberta-wwm-ext
+  cls: '[CLS]'
+  sep: '[SEP]'
+  unk: '[UNK]'
+  pad: '[PAD]'
+
+custome_tokens: '🍎😅💩尛硌糇💰🐴🙊💯⭐🐶🐟🙏😄🏻📶🐮🍺❌🤔🐍🐸🙃🤣🏆'
+unkown_tokens: '🍔—🐛🙉🙄🔨🏆🆔👌👀🥺冖🌚🙈😭🍎😅💩尛硌糇💰🐴🙊💯⭐🐶🐟🙏😄🏻📶🐮🍺❌🤔🐍🐸🙃🤣🏆😂🌚'
+max_length: 512
+
+# parameters 
+mixup: False 
+epoch_size: 20
+shuffle: False
+batch_size: 2
+learning_rate: 1e-3
+bert_learning_rate: 3e-5
+patience: 100
+max_grad_norm: 1.0
+warmup_proportion: 0.1
+gradient_accumulation_steps: 1
+adam_epsilon: 1e-8
+warmup_steps: 0
+weight_decay: 0
+
+# dict 
+bio_mode: 'OBIES'
+asp_type: 'Aspect'
+tgt_type: 'Target'
+opi_type: 'Opinion'
+
+# Graph: 
+edge_dim: 100
+gcn_layer_num: 2
+
+
+max_span_width: 10
+ffnn_size: 200
+ffnn_depth: 1
+ffnn_dropout: 0.3
+ratio: 0.05
+# mutex: True
+mutex: False 
+lambdax: 0.5
+loss_weight: 1
+max_pred_span: 100
+sent_id_emb_size: 200
+
+
+use_dep: False 
+ip_port: 0.0.0.0:8080
+use_pair_mask: 0
+use_distance: 0
+max_distance: 30 
