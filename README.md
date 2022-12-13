@@ -14,7 +14,7 @@
 </a>
 
 <!-- </p> -->
-This repository contains code(to be done) and data for our paper "DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)"
+This repository contains code (will be available soon) and data for our paper [DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)
 
 To clone the repository, please run the following command:
 
