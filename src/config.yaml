@@ -27,7 +27,7 @@ unkown_tokens: '🍔—🐛🙉🙄🔨🏆🆔👌👀🥺冖🌚🙈😭🍎�
 max_length: 512
 
 # parameter 
-epoch_size: 1
+epoch_size: 10
 batch_size: 2
 lr: 1e-3
 bert_lr: 1e-5

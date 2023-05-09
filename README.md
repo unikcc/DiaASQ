@@ -59,7 +59,7 @@ pip install -r requirements.txt
 <!-- You can either choose to use the parsed data or build the data manually. -->
 
 ##### Parsed data 
-You can download the parsed data with json format from [Google Drive Link](https://drive.google.com/file/d/1MsY8LqbnQ40te-i_OmL5wOT6vQr6PuQi/view?usp=share_link).
+Download the parsed data in JSON format from [Google Drive Link](https://drive.google.com/file/d/1MsY8LqbnQ40te-i_OmL5wOT6vQr6PuQi/view?usp=share_link).
 Unzip the files and place them under the data directory like the following:
 
 ```bash
@@ -67,7 +67,7 @@ data/dataset/jsons_zh
 data/dataset/jsons_en
 ```
 
-The dataset currently only includes the train and valid sets. The test set will be released at a later date, refer to [this issue](https://github.com/unikcc/DiaASQ/issues/5#issuecomment-1495612887) for more information.
+The dataset currently only includes the train and valid sets. The test set will be released at a later date; refer to [this issue](https://github.com/unikcc/DiaASQ/issues/5#issuecomment-1495612887) for more information.
 
 <!-- 
 ##### Build data manually
@@ -79,7 +79,7 @@ You can also manually run the scripts to transform the ann and txt format to jso
 ./data/dataset/annotation_en
 
 ```  
-3. Run the following commands, then you will obtained the parsed file with json format.
+3. Run the following commands, then you will obtain the parsed file in JSON format.
 ```bash
 python src/prepare_data.py
 python src/prepare_data.py --lang en
@@ -103,7 +103,7 @@ python src/prepare_data.py --lang en
   bash scripts/train_en_notest.sh
   ```
 
-+ Cuda memory requirements 
++ GPU memory requirements 
 
 | Dataset | Batch size | GPU Memory |
 | --- | --- | --- |

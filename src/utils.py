@@ -160,7 +160,7 @@ class RelationMetric:
         list0 (original sentence):"London is the capital of England"
         list1 (tokenized sentence): "Lon ##don is the capital of England"
         list2 (packed sentence): "[CLS] Lon #don is the capital of England [SEP]"
-        predicted entity: (1, 3), denotes "Lon #don" in list2
+        predicted entity: (1, 2), denotes "Lon #don" in list2
 
         new2old: list2->list1
           = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, ...}
