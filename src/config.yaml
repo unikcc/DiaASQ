@@ -1,0 +1,61 @@
+# cuda
+cuda_index: 0
+seed: 42
+
+# path 
+lang: zh
+annotation_dir: data/dataset/annotation
+json_path: data/dataset/jsons
+preprocessed_dir: data/preprocessed
+target_dir: data/save
+
+bert-en:
+  bert_path: roberta-large
+  cls: '<s>'
+  sep: '</s>'
+  unk: '<unk>'
+  pad: '<pad>'
+
+bert-zh:
+  bert_path: hfl/chinese-roberta-wwm-ext
+  cls: '[CLS]'
+  sep: '[SEP]'
+  unk: '[UNK]'
+  pad: '[PAD]'
+
+unkown_tokens: '🍔—🐛🙉🙄🔨🏆🆔👌👀🥺冖🌚🙈😭🍎😅💩尛硌糇💰🐴🙊💯⭐🐶🐟🙏😄🏻📶🐮🍺❌🤔🐍🐸🙃🤣🏆😂🌚'
+max_length: 512
+
+# parameter 
+epoch_size: 1
+batch_size: 2
+lr: 1e-3
+bert_lr: 1e-5
+patience: 10
+max_grad_norm: 1.0
+warmup_proportion: 0.1
+gradient_accumulation_steps: 1
+adam_epsilon: 1e-8
+warmup_steps: 0
+weight_decay: 0
+
+# dict 
+bio_mode: 'OBIES'
+asp_type: 'Aspect'
+tgt_type: 'Target'
+opi_type: 'Opinion'
+
+polarity_dict:
+  O: 0
+  pos: 1
+  neg: 2
+  other: 3
+
+
+# You can set this value to 'False' to save GPU memory, but the performance may decrease.
+use_rope: True
+
+loss_weight:
+  ent: 1
+  rel: 5
+  pol: 3

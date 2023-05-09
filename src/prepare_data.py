@@ -4,6 +4,7 @@
 
 """
 @filename: prepare_data.py
+@dateTime: 2022-03-13 15:36:30
 """
 
 import os
@@ -28,7 +29,7 @@ from tqdm import tqdm
 
 class Prepare(object):
     def __init__(self, lang):
-        config = AttrDict(yaml.load(open('config.yaml', 'r', encoding='utf-8').read(), Loader=yaml.FullLoader))
+        config = AttrDict(yaml.load(open('src/config.yaml', 'r', encoding='utf-8').read(), Loader=yaml.FullLoader))
         config.lang = lang
 
         keys = ['annotation_dir', 'json_path', 'preprocessed_dir', 'target_dir']
@@ -39,8 +40,7 @@ class Prepare(object):
 
         self.set_seed(config.seed)
         self.opinion_dict = {'Opinion_pos': 'pos', 'Opinion_neg': 'neg', 'Opinion_mid': 'neu', 'Opinion_ambiguous': 'amb', 'Opinion_doubt': 'doubt', 'Opinion1_pos': 'pos', "Opinion1_neg": 'neg'}
-        if lang == 'en':
-            self.spacy = spacy.load('en_core_web_sm')
+        self.spacy = spacy.load('en_core_web_sm')
     
     def set_seed(self, seed):
         np.random.seed(seed)
@@ -180,8 +180,8 @@ class Prepare(object):
             # After obtaining s2c, convert the index of the sentence-level dependency analysis to the index in the entire thread
             cur_line = {'doc_id': cur_doc_id, 'sentences': cur_sentences, 'speakers': cur_speakers, 'triplets': [], 'targets': [], 'aspects': [], 'opinions': [], 'dependency': cur_dependency}
             sub_dialogs.append(cur_line)
-        
-        #实现将实体（Target、Aspect、Object）从全局分配到各个分支
+
+        # Implement the distribution of entities (Target, Aspect, Object) from the global scope to each branch.
         def divide(objects, mode='targets'):
             for line in objects:
                 # Obtain the start and end indexes and text of the entity
@@ -206,6 +206,7 @@ class Prepare(object):
                         if not ''.join([w for line in sub_dialogs[k]['sentences'] for w in line][nstart:nend+1]) == text.replace(' ', ''):
                             print([w for line in sub_dialogs[k]['sentences'] for w in line][nstart:nend+1], text.replace(' ', ''))
                             print(sub_dialogs[k]['doc_id'])
+                            xx = 1
                         assert ''.join([w for line in sub_dialogs[k]['sentences'] for w in line][nstart:nend+1]) == text.replace(' ', '')
                         if mode == 'opinions':
                             # If it is an opinion, add the polarity
@@ -219,6 +220,7 @@ class Prepare(object):
                     if not ''.join([w for line in sub_dialogs[c_id0]['sentences'] for w in line][nstart:nend+1]) == text.replace(' ', ''):
                         print([w for line in sub_dialogs[c_id0]['sentences'] for w in line][nstart:nend+1], text.replace(' ', ''))
                         print(sub_dialogs[c_id0]['doc_id'])
+                        x = 1
                     assert ''.join([w for line in sub_dialogs[c_id0]['sentences'] for w in line][nstart:nend+1]) == text.replace(' ', '')
                     # assert ''.join(sub_dialogs[c_id0]['sentences'])[nstart:nend+1] == text
                     if mode == 'opinions':
@@ -245,17 +247,17 @@ class Prepare(object):
             effective_ids = [(w[0], z) for w, z in zip([nts, nas, nos], [t_s, a_s, o_s]) if w[0] != - 2]
 
             if all(w[0] == -1 for w in effective_ids):
-                # 如果该三元组中所有实体都存在于第一句话中，那么将其分配到三个分支中
+                # If all entities in the triplet are present in the first sentence, then distribute them to three branches.
                 nts, nas, nos = [w[1] for w in [nts, nas, nos]]
                 nte, nae, noe = [w[1] + 1 if w[1] != -1 else w[1] for w in [nte, nae, noe]]
                 cur_line = [nts, nte, nas, nae, nos, noe, polarity, t_t, a_t, o_t]
                 for k in range(len(sub_dialogs)):
                     sub_dialogs[k]['triplets'].append(cur_line)
             else:
-                # 否则，将其分配到唯一的分支中
-                # 忽略第一句话
+                # Otherwise, distribute them to a unique branch, ignoring the first sentence.
                 effective_ids = [w for w in effective_ids if w[0] != -1]
-                # 如果存在跨分支，忽略
+
+                # Ignore if there is a cross-branch occurrence.
                 if not all(w[0] == effective_ids[0][0] for w in effective_ids):
                     ids = sorted(list(set([sentence_ids[w[1]] for w in effective_ids])))
                     continue
@@ -375,6 +377,8 @@ class Prepare(object):
                             new_cut.append(word[-3:])
                         else:
                             lst = re.findall(pattern, word)
+                            if not len(''.join(lst)) == len(word):
+                                xx = 1
                             assert len(''.join(lst)) == len(word)
                             new_cut += lst
                     else:
@@ -392,6 +396,8 @@ class Prepare(object):
                         j += 1
                     else:
                         lens = len(new_cut[j])
+                        if lens <= 1:
+                            xx = 1
                         assert lens > 1
                         assert line[i:i+lens] == new_cut[j]
                         for k in range(lens):
@@ -406,6 +412,8 @@ class Prepare(object):
             prev_length, word_length = 0, 0
             
             for line in content:
+                if '≥' in line:
+                    xx = 1
                 cut_line = [w.text for w in self.spacy(line)]
                 # cut_line = line.split()
                 # assert all(w != ' ' for w in word)
@@ -421,9 +429,12 @@ class Prepare(object):
                         j += 1
                     else:
                         lens = len(cut_line[j])
+                        if lens <= 1:
+                            xx = 1
                         assert lens > 1
                         if not line[i:i+lens] == cut_line[j]:
                             print('-{}-{}='.format(line[i:i+lens], cut_line[j]))
+                            xx = 1
                         assert line[i:i+lens] == cut_line[j]
                         for k in range(lens):
                             char2dict[prev_length + i] = word_length + j
@@ -431,6 +442,7 @@ class Prepare(object):
                         j += 1
                 if not i == len(line) or not j == len(cut_line):
                     print(len(line))
+                    xx = 1
                 assert i == len(line) and j == len(cut_line)
                 prev_length += len(line)
                 word_length += len(cut_line)
@@ -450,6 +462,8 @@ class Prepare(object):
                     tid, (tp, start, end), text = line.split('\t')[0], (line.split('\t')[1].split()[0], *line.split('\t')[1].split(';')[-1].split()), line.split('\t')[2].split()[-1]
                 start, end = int(start), int(end)
                 nstart, nend = char2char[start], char2char[end]
+                if not nstart in char2dict:
+                    xx = 1
                 nstart, nend = char2dict[nstart], char2dict[nend - 1] + 1
 
                 newline = (tp, nstart, nend, text)
@@ -514,7 +528,9 @@ class Prepare(object):
     
     def parse_document(self, document):
         # dependency parsing, char-level subscripts 
-        if not self.config.use_dep: 
+        # no dependency parsing
+        if True:
+        # if not self.config.use_dep: 
             res = []
             for line in document:
                 # line = line.replace(' ', '')
@@ -625,12 +641,12 @@ class Prepare(object):
         dialogue['sentences'] = [' '.join(w) for w in dialogue['sentences']]
         res_sub = []
 
-        for sub in dialogue['sub_dialogs']:
-            assert all(w != ' ' for line in sub['sentences'] for w in line)
-            sub['sentences'] = [' '.join(w) for w in sub['sentences']]
-            res_sub.append(sub)
+        # for sub in dialogue['sub_dialogs']:
+        #     assert all(w != ' ' for line in sub['sentences'] for w in line)
+        #     sub['sentences'] = [' '.join(w) for w in sub['sentences']]
+        #     res_sub.append(sub)
 
-        dialogue['sub_dialogs'] = res_sub
+        # dialogue['sub_dialogs'] = res_sub
         return dialogue
     
     def forward(self):
@@ -655,9 +671,11 @@ class Prepare(object):
                 dialog = self.parse_dialog(line)
 
                 # Get the sub-dialogue tree
-                sub_dialog = self.parse_subdialog(dialog)
-                dialog['sub_dialogs'] = sub_dialog
-                del dialog['sentence_ids']
+                del dialog['dependency']
+                del dialog['local_dependency']
+                # sub_dialog = self.parse_subdialog(dialog)
+                # dialog['sub_dialogs'] = sub_dialog
+                # del dialog['sentence_ids']
 
                 dialog = self.post_parse(dialog)
 
