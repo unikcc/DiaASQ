@@ -1,6 +1,6 @@
 <!-- <p align="center"> -->
 <!-- </p> -->
-## DiaASQ
+# DiaASQ
 <a href="https://github.com/unikcc/DiaASQ">
   <img src="https://img.shields.io/badge/DiaASQ-0.1-blue" alt="pytorch 1.8.1">
 </a>
@@ -11,7 +11,11 @@
   <img src="https://img.shields.io/badge/transformers-4.24.0-orange" alt="Build Status">
 </a>
 
-This repository contains data and code for our paper "DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)"
+This repository contains data and code for the ACL23 (findings) paper: [DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)
+
+Also see the [project page](https://conasq.pages.dev/) for more details.
+
+------
 
 To clone the repository, please run the following command:
 
