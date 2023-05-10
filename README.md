@@ -23,7 +23,7 @@ To clone the repository, please run the following command:
 git clone https://github.com/unikcc/DiaASQ
 ```
 
-## News
+## News 🎉
 :sparkles: `2023-05-10`: Released training code.  
 :loudspeaker: `2023-05-10`: Released the train and valid dataset.  
 :zap: `2022-12-10`: Created repository.  
