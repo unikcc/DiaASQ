@@ -24,16 +24,15 @@ git clone https://github.com/unikcc/DiaASQ
 ```
 
 ## News 🎉
-:sparkles: `2023-05-10`: Released training code.  
-:loudspeaker: `2023-05-10`: Released the train and valid dataset.  
+<!-- :sparkles: `2023-05-10`: Released code and dataset.   -->
+:loudspeaker: `2023-05-10`: Released code and dataset.  
 :zap: `2022-12-10`: Created repository.  
 
 
 ## Quick Links
 - [Overview](#overview)
 - [Requirements](#requirements)
-- [Data Preparation](#data-preparation)
-- [Model Usage](#model-usage)
+- [Code Usage](#code-usage)
 - [Citation](#citation)
 
 
@@ -58,61 +57,29 @@ Install the other required packages:
 pip install -r requirements.txt
 ```
 
-## Data Preparation
+## Code Usage 
 
-<!-- You can either choose to use the parsed data or build the data manually. -->
++ Dataset: the dataset can be found at:
+  ```bash
+  data/dataset
+  ```
 
-##### Parsed data 
-Download the parsed data in JSON format from [Google Drive Link](https://drive.google.com/file/d/1MsY8LqbnQ40te-i_OmL5wOT6vQr6PuQi/view?usp=share_link).
-Unzip the files and place them under the data directory like the following:
-
-```bash
-data/dataset/jsons_zh
-data/dataset/jsons_en
-```
-
-The dataset currently only includes the train and valid sets. The test set will be released at a later date; refer to [this issue](https://github.com/unikcc/DiaASQ/issues/5#issuecomment-1495612887) for more information.
-
-<!-- 
-##### Build data manually
-You can also manually run the scripts to transform the ann and txt format to json format.
-1. Download the source data (ann and txt) from [Google Drive Link]
-2. Then, unzip the files and place them under the data directory like the following:
-```
-./data/dataset/annotation_zh
-./data/dataset/annotation_en
-
-```  
-3. Run the following commands, then you will obtain the parsed file in JSON format.
-```bash
-python src/prepare_data.py
-python src/prepare_data.py --lang en
-``` -->
-
-## Model Usage 
-
-+ Train && Evaluate for Chinese dataset
++ Train && Evaluate on the Chinese dataset
   ```bash 
   bash scripts/train_zh.sh
   ```
 
-+ Train && Evaluate for English dataset
++ Train && Evaluate on the English dataset
   ```bash 
   bash scripts/train_en.sh
   ```
 
-+ If you do not have a `test` set yet, you can run the following command to train and evaluate the model on the `valid` set.
-  ```bash 
-  bash scripts/train_zh_notest.sh
-  bash scripts/train_en_notest.sh
-  ```
-
 + GPU memory requirements 
 
-| Dataset | Batch size | GPU Memory |
-| --- | --- | --- |
-| Chinese | 2 |  8GB. |
-| English | 2 | 16GB. |
+  | Dataset | Batch size | GPU Memory |
+  | --- | --- | --- |
+  | Chinese | 2 |  8GB. |
+  | English | 2 | 16GB. |
 
 + Customized hyperparameters:  
 You can set hyperparameters in `main.py` or `src/config.yaml`, and the former has a higher priority.
