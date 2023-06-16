@@ -53,7 +53,7 @@ The dataset can be found at:
   ```bash
   data/dataset
     - jsons_en
-    - jsons_cn
+    - jsons_zh
   ```
 
 
