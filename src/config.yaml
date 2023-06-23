@@ -4,7 +4,6 @@ seed: 42
 
 # path 
 lang: zh
-annotation_dir: data/dataset/annotation
 json_path: data/dataset/jsons
 preprocessed_dir: data/preprocessed
 target_dir: data/save
@@ -39,6 +38,8 @@ adam_epsilon: 1e-8
 warmup_steps: 0
 weight_decay: 0
 
+inner_dim: 256
+
 # dict 
 bio_mode: 'OBIES'
 asp_type: 'Aspect'
@@ -50,10 +51,6 @@ polarity_dict:
   pos: 1
   neg: 2
   other: 3
-
-
-# You can set this value to 'False' to save GPU memory, but the performance may decrease.
-use_rope: True
 
 loss_weight:
   ent: 1

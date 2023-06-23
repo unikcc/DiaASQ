@@ -16,6 +16,7 @@ import json
 
 from src.common import WordPair
 from src.preprocess import Preprocessor
+# from src.run_eval1 import Template as Run_eval
 from src.run_eval import Template as Run_eval
 
 class MyDataset(Dataset):
@@ -30,8 +31,7 @@ class MyDataset(Dataset):
 
 class MyDataLoader:
     def __init__(self, cfg):
-        with_test = 'test' if 'test' in cfg.input_files else 'notest'
-        path = os.path.join(cfg.preprocessed_dir, '{}_{}_{}.pkl'.format(cfg.lang, with_test, cfg.bert_path.replace('/', '-')))
+        path = os.path.join(cfg.preprocessed_dir, '{}_{}.pkl'.format(cfg.lang, cfg.bert_path.replace('/', '-')))
         preprocessor = Preprocessor(cfg)
         
         data = None
@@ -69,11 +69,11 @@ class MyDataLoader:
         padding = lambda input_batch: [w + [0] * (max_lens - len(w)) for w in input_batch]
         token2sents, utterance_index, token_index, token2speaker = map(padding, [token2sents, utterance_index, token_index, token2speaker])
 
-        padding_list = lambda input_batch :[list(map(list, w)) + [[0, 0, 0]] * (max(map(len, input_batch)) - len(w)) for w in input_batch]
+        padding_list = lambda input_batch : [list(map(list, w)) + [[0, 0, 0]] * (max(map(len, input_batch)) - len(w)) for w in input_batch]
         entity_lists, rel_lists, polarity_lists = map(padding_list, [entity_list, rel_list, polarity_list])
 
         max_tri_num = max(map(len, triplets))
-        triplet_masks = [[1]*len(w) + [0] * (max_tri_num - len(w)) for w in triplets]
+        triplet_masks = [[1] * len(w) + [0] * (max_tri_num - len(w)) for w in triplets]
         triplets = [list(map(list, w)) + [[0] * 7] * (max_tri_num - len(w)) for w in triplets]
 
         sentence_masks = np.zeros([len(token2sents), max_lens, max_lens], dtype=int)
@@ -125,11 +125,8 @@ class MyDataLoader:
        
     def getdata(self):
         
-        def load_data(mode):
-            if mode not in self.config.input_files:
-                return None
-            return DataLoader(MyDataset(self.data[mode]), num_workers=0, worker_init_fn=self.worker_init, 
-                                                shuffle= (mode == 'train'),  batch_size=self.config.batch_size, collate_fn=self.collate_fn)
+        load_data = lambda mode: DataLoader(MyDataset(self.data[mode]), num_workers=0, worker_init_fn=self.worker_init, 
+                                                shuffle=(mode == 'train'),  batch_size=self.config.batch_size, collate_fn=self.collate_fn)
         
         train_loader, valid_loader, test_loader = map(load_data, 'train valid test'.split())
 
@@ -145,10 +142,10 @@ class RelationMetric:
     def __init__(self, config):
         self.clear()
         self.kernel = WordPair()
-        self.prediction_result = defaultdict(list)
+        self.predict_result = defaultdict(list)
         self.config = config
     
-    def trans2position(self, new2old, pieces2words, triplet):
+    def trans2position(self, triplet, new2old, pieces2words):
         res = []
         """
         recover the position of entities in the original sentence
@@ -181,6 +178,29 @@ class RelationMetric:
             ne0, ne1, ne2 = tail(e0), tail(e1), tail(e2)
             res.append([ns0, ne0, ns1, ne1, ns2, ne2, pol])
         return res
+    
+    def trans2pair(self, pred_pairs, new2old, pieces2words):
+        new_pairs = {}
+        new_pos = lambda x : pieces2words[new2old[x]]
+        for k, line in pred_pairs.items():
+            new_line = []
+            for s0, e0, s1, e1 in line:
+                s0, e0, s1, e1 = new_pos(s0), new_pos(e0), new_pos(s1), new_pos(e1)
+                new_line.append([s0, e0, s1, e1])
+            new_pairs[k] = new_line
+        return new_pairs
+
+    def filter_entity(self, ent_list, new2old, pieces2words):
+        res = []
+
+        # If the entity is a sub-string of another entity, remove it
+        # ent_list = sorted(ent_list, key=lambda x: (x[0], -x[1]))
+        # ent_list = [w for i, w in enumerate(ent_list) if i == 0 or w[0] != ent_list[i-1][0]]
+
+        for s, e, pol in ent_list:
+            ns, ne = pieces2words[new2old[s]], pieces2words[new2old[e]]
+            res.append([ns, ne, pol])
+        return res
 
     def add_instance(self, data, pred_ent_matrix, pred_rel_matrix, pred_pol_matrix):
         """
@@ -203,16 +223,24 @@ class RelationMetric:
         for i in range(len(pred_ent_matrix)):
             ent_matrix, rel_matrix, pol_matrix = pred_ent_matrix[i], pred_rel_matrix[i], pred_pol_matrix[i]
             pred_triplet, pred_pairs = self.kernel.get_triplets(ent_matrix, rel_matrix, pol_matrix, token2sents[i])
-            nposition = self.trans2position(new2old[i], pieces2words[i], pred_triplet)
-            self.prediction_result[doc_id[i]].append(nposition)
+            pred_ents = self.kernel.rel_matrix2list(ent_matrix)
+
+            pred_ents = self.filter_entity(pred_ents, new2old[i], pieces2words[i])
+            pred_pairs = self.trans2pair(pred_pairs, new2old[i], pieces2words[i])
+            pred_triplet = self.trans2position(pred_triplet, new2old[i], pieces2words[i])
+
+            self.predict_result[doc_id[i]].append(pred_ents)
+            self.predict_result[doc_id[i]].append(pred_pairs)
+            self.predict_result[doc_id[i]].append(pred_triplet)
 
     def clear(self):
-        self.prediction_result = defaultdict(list)
+        self.predict_result = defaultdict(list)
 
     def save2file(self, gold_file, pred_file):
         # pol_dict = {"O": 0, "pos": 1, "neg": 2, "other": 3}
         pol_dict = self.config.polarity_dict
         reverse_pol_dict = {v: k for k, v in pol_dict.items()}
+        reverse_ent_dict = {v: k for k, v in self.config.entity_dict.items()}
                 
         gold_file = open(gold_file, 'r', encoding='utf-8')
 
@@ -221,20 +249,38 @@ class RelationMetric:
         res = []
         for line in data:
             doc_id, sentence = line['doc_id'], line['sentences']
-            if doc_id not in self.prediction_result:
+            if doc_id not in self.predict_result:
                 continue
             doc = ' '.join(sentence).split()
-            triples = self.prediction_result[doc_id]
             new_triples = []
-            for s0, e0, s1, e1, s2, e2, pol in triples[0]:
+
+            prediction = self.predict_result[doc_id]
+            entities = defaultdict(list)
+            for head, tail, tp in prediction[0]:
+                tp = reverse_ent_dict[tp]
+                head, tail = head, tail + 1
+                tp_dict = {'ENT-T': 'targets', 'ENT-A': 'aspects', 'ENT-O': 'opinions'}
+                entities[tp_dict[tp]].append([head, tail])
+
+            pairs = defaultdict(list)
+            for key in ['ta', 'to', 'ao']:
+                for s0, e0, s1, e1 in prediction[1][key]:
+                    e0, e1 = e0 + 1, e1 + 1
+                    pairs[key].append([s0, e0, s1, e1])
+
+            new_triples = []
+            for s0, e0, s1, e1, s2, e2, pol in prediction[2]:
                 pol = reverse_pol_dict[pol]
                 e0, e1, e2 = e0 + 1, e1 + 1, e2 + 1
                 new_triples.append([s0, e0, s1, e1, s2, e2, pol, ' '.join(doc[s0:e0]), ' '.join(doc[s1:e1]), ' '.join(doc[s2:e2])])
-            res.append({'doc_id': doc_id, 'triplets': new_triples})
+
+            res.append({'doc_id': doc_id, 'triplets': new_triples, \
+                        'targets': entities['targets'], 'aspects': entities['aspects'], 'opinions': entities['opinions'],\
+                        'ta': pairs['ta'], 'to': pairs['to'], 'ao': pairs['ao']})
         logger.info('Save prediction results to {}'.format(pred_file))
         json.dump(res, open(pred_file, 'w', encoding='utf-8'), ensure_ascii=False)
     
-    def compute(self, name='valid', action='eval'):
+    def compute(self, name='valid'):
         # action: pred, make prediction, save to file 
         # action: eval, make prediction, save to file and evaluate 
 
@@ -244,8 +290,7 @@ class RelationMetric:
             # 'gold_file': os.path.join(self.config.json_path, '{}_gold.json'.format(name))
         })
         self.save2file(args.gold_file, args.pred_file)
-        if action == 'pred':
-            return
+
         micro, iden, res = Run_eval(args).forward()
         self.clear()
         return micro[2], res

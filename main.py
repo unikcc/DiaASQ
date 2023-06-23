@@ -64,18 +64,17 @@ class Main:
                 _, (pred_ent_matrix, pred_rel_matrix, pred_pol_matrix) = self.model(**data)
                 self.relation_metric.add_instance(data, pred_ent_matrix, pred_rel_matrix, pred_pol_matrix)
 
-    def evaluate(self, epoch=0, action='eval'):
-        PATH = os.path.join(self.config.target_dir, "{}_{}.pth.tar").format(self.config.lang, epoch)
+    def test(self):
+        PATH = os.path.join(self.config.target_dir, "{}_{}.pth.tar").format(self.config.lang, self.best_iter)
         self.model.load_state_dict(torch.load(PATH, map_location=self.config.device)['model'])
         self.model.eval()
 
         self.evaluate_iter(self.testLoader)
-        result = self.relation_metric.compute('test', action)
+        result = self.relation_metric.compute('test')
 
-        if action == 'eval':
-            score, res = result
-            logger.info("Evaluate on test set, micro-F1 score: {:.4f}%".format(score * 100))
-            print(res)
+        score, res = result
+        logger.info("Evaluate on test set, micro-F1 score: {:.4f}%".format(score * 100))
+        print(res)
 
     def train(self):
         best_score, best_iter = 0, 0
@@ -125,27 +124,18 @@ class Main:
         self.relation_metric = RelationMetric(self.config)
         self.load_param()
 
-        if self.config.action != 'train':
-            logger.info("Start to {}...".format(self.config.action))
-            self.evaluate(self.config.best_iter, self.config.action)
-            return
-
         logger.info("Start training...")
+        # self.best_iter = 7
         self.train()
         logger.info("Training finished..., best epoch is {}...".format(self.best_iter))
-        if 'test' in self.config.input_files:
-            logger.info("Start evaluating...")
-            self.evaluate(self.best_iter)
+        self.test()
 # 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--lang', type=str, default='en', choices=['zh', 'en'], help='language selection')
-    parser.add_argument('-bl', '--bert_lr', type=float, default=1e-5, help='learning rate for BERT layers')
+    parser.add_argument('-b', '--bert_lr', type=float, default=1e-5, help='learning rate for BERT layers')
     parser.add_argument('-c', '--cuda_index', type=int, default=0, help='CUDA index')
-    parser.add_argument('-i', '--input_files', type=str, default='train valid test', help='input file names')
-    parser.add_argument('-a', '--action', type=str, default='train', choices=['train', 'eval', 'pred'], help='choose to train, evaluate, or predict')
-    parser.add_argument('-b', '--best_iter', type=int, default=0, help='best iter to run test, only used when action is eval or pred')
     parser.add_argument('-s', '--seed', type=int, default=42, help='random seed')
     args = parser.parse_args()
     main = Main(args)

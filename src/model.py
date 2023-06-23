@@ -2,24 +2,27 @@
 # _*_ coding:utf-8 _*_
 
 
-from src.Roberta import MultiHeadAttention
+# from src.Roberta import MultiHeadAttention
 from transformers import AutoModel, AutoConfig
+from src.common import MultiHeadAttention
+
 import torch
 import torch.nn as nn
 from itertools import accumulate
 
 
 class BertWordPair(nn.Module):
-    def __init__(self, config):
+    def __init__(self, cfg):
         super(BertWordPair, self).__init__()
-        self.bert = AutoModel.from_pretrained(config.bert_path)
-        bert_config = AutoConfig.from_pretrained(config.bert_path)
+        self.bert = AutoModel.from_pretrained(cfg.bert_path)
+        bert_config = AutoConfig.from_pretrained(cfg.bert_path)
 
-        self.inner_dim = 256
+        self.dense_layers = nn.ModuleDict({
+            'ent': nn.Linear(bert_config.hidden_size, cfg.inner_dim * 4 * 6),
+            'rel': nn.Linear(bert_config.hidden_size, cfg.inner_dim * 4 * 3),
+            'pol': nn.Linear(bert_config.hidden_size, cfg.inner_dim * 4 * 4)
+        })
 
-        self.dense0 = nn.Linear(bert_config.hidden_size, self.inner_dim * 4 * 6)
-        self.dense1 = nn.Linear(bert_config.hidden_size, self.inner_dim * 4 * 3)
-        self.dense2 = nn.Linear(bert_config.hidden_size, self.inner_dim * 4 * 4)
         self.dropout = nn.Dropout(bert_config.hidden_dropout_prob)
 
         att_head_size = int(bert_config.hidden_size / bert_config.num_attention_heads)
@@ -28,16 +31,16 @@ class BertWordPair(nn.Module):
         self.speaker_attention = MultiHeadAttention(bert_config.num_attention_heads, bert_config.hidden_size, att_head_size, att_head_size, bert_config.attention_probs_dropout_prob)
         self.thread_attention = MultiHeadAttention(bert_config.num_attention_heads, bert_config.hidden_size, att_head_size, att_head_size, bert_config.attention_probs_dropout_prob)
 
-        self.config = config 
+        self.cfg = cfg 
     
     def custom_sinusoidal_position_embedding(self, token_index, pos_type):
         """
         See RoPE paper: https://arxiv.org/abs/2104.09864
         """
-        output_dim = self.inner_dim
+        output_dim = self.cfg.inner_dim
         position_ids = token_index.unsqueeze(-1)
 
-        indices = torch.arange(0, output_dim // 2, dtype=torch.float).to(self.config.device)
+        indices = torch.arange(0, output_dim // 2, dtype=torch.float).to(self.cfg.device)
         if pos_type == 0:
             indices = torch.pow(10000, -2 * indices / output_dim)
         else:
@@ -107,36 +110,28 @@ class BertWordPair(nn.Module):
         logits = torch.stack(logits) 
         return logits 
 
-    def classify_matrix(self, kwargs, sequence_outputs, input_labels, masks, mat_name='ent'):
+    def classify_matrix(self, kwargs, sequence_outputs, mat_name='ent'):
 
         utterance_index, token_index, thread_lengths = [kwargs[w] for w in ['utterance_index', 'token_index', 'thread_lengths']]
-        if mat_name == 'ent':
-            outputs = self.dense0(sequence_outputs)
-        elif mat_name == 'rel': 
-            outputs = self.dense1(sequence_outputs)
-        else:
-            outputs = self.dense2(sequence_outputs)
+        input_labels = kwargs[f"{mat_name}_matrix"]
+        masks = kwargs['sentence_masks'] if mat_name == 'ent' else kwargs['full_masks']
 
-        outputs = torch.split(outputs, self.inner_dim * 4, dim=-1)
+        dense_layer = self.dense_layers[mat_name]
 
+        outputs = dense_layer(sequence_outputs)
+        outputs = torch.split(outputs, self.cfg.inner_dim * 4, dim=-1)
         outputs = torch.stack(outputs, dim=-2)
 
-        q_token, q_utterance, k_token, k_utterance = torch.split(outputs, self.inner_dim, dim=-1)
+        q_token, q_utterance, k_token, k_utterance = torch.split(outputs, self.cfg.inner_dim, dim=-1)
 
-        if self.config.use_rope == True:
-            if mat_name == 'ent':
-                pred_logits = self.get_ro_embedding(q_token, k_token, token_index, thread_lengths, pos_type=0) # pos_type=0 for token-level relative distance encoding
-            else:
-                pred_logits0 = self.get_ro_embedding(q_token, k_token, token_index, thread_lengths, pos_type=0)
-                pred_logits1 = self.get_ro_embedding(q_utterance, k_utterance, utterance_index, thread_lengths, pos_type=1) # pos_type=1 for utterance-level relative distance encoding
-                pred_logits = pred_logits0 + pred_logits1
-        else:
-            # without rope, use dot-product attention directly
-            pred_logits = torch.einsum('bmhd,bnhd->bmnh', q_token, k_token).contiguous()
+        pred_logits = self.get_ro_embedding(q_token, k_token, token_index, thread_lengths, pos_type=0) # pos_type=0 for token-level relative distance encoding
+        if mat_name != 'ent':
+            pred_logits1 = self.get_ro_embedding(q_utterance, k_utterance, utterance_index, thread_lengths, pos_type=1) # pos_type=1 for utterance-level relative distance encoding
+            pred_logits += pred_logits1
 
         nums = pred_logits.shape[-1]
 
-        criterion = nn.CrossEntropyLoss(sequence_outputs.new_tensor([1.0] + [self.config.loss_weight[mat_name]] * (nums - 1)))
+        criterion = nn.CrossEntropyLoss(sequence_outputs.new_tensor([1.0] + [self.cfg.loss_weight[mat_name]] * (nums - 1)))
 
         active_loss = masks.view(-1) == 1
         active_logits = pred_logits.view(-1, pred_logits.shape[-1])[active_loss]
@@ -180,9 +175,7 @@ class BertWordPair(nn.Module):
 
     def forward(self, **kwargs):
         input_ids, input_masks, input_segments = [kwargs[w] for w in ['input_ids', 'input_masks', 'input_segments']]
-        ent_matrix, rel_matrix, pol_matrix = [kwargs[w] for w in ['ent_matrix', 'rel_matrix', 'pol_matrix']]
-        reply_masks, speaker_masks, thread_masks = [kwargs[w] for w in ['reply_masks', 'speaker_masks', 'thread_masks']]
-        sentence_masks, full_masks, dialogue_length = [kwargs[w] for w in ['sentence_masks', 'full_masks', 'dialogue_length']]
+        reply_masks, speaker_masks, thread_masks, dialogue_length = [kwargs[w] for w in ['reply_masks', 'speaker_masks', 'thread_masks', 'dialogue_length']]
 
         sequence_outputs = self.bert(input_ids, token_type_ids=input_segments, attention_mask=input_masks)[0]
 
@@ -191,8 +184,8 @@ class BertWordPair(nn.Module):
 
         sequence_outputs = self.build_attention(sequence_outputs, reply_masks=reply_masks, speaker_masks=speaker_masks, thread_masks=thread_masks)
 
-        loss0, tags0 = self.classify_matrix(kwargs, sequence_outputs, ent_matrix, sentence_masks, 'ent')
-        loss1, tags1 = self.classify_matrix(kwargs, sequence_outputs, rel_matrix, full_masks, 'rel')
-        loss2, tags2 = self.classify_matrix(kwargs, sequence_outputs, pol_matrix, full_masks, 'pol')
+        loss0, tags0 = self.classify_matrix(kwargs, sequence_outputs, 'ent')
+        loss1, tags1 = self.classify_matrix(kwargs, sequence_outputs, 'rel')
+        loss2, tags2 = self.classify_matrix(kwargs, sequence_outputs, 'pol')
       
         return (loss0, loss1, loss2), (tags0, tags1, tags2)

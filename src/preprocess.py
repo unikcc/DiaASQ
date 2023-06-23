@@ -455,13 +455,15 @@ class Preprocessor:
             input_masks = [[1] * len(w) for w in input_ids]
             input_segments = [[0] * len(w) for w in input_ids]
 
+            new_triplets, pairs, entity_lists, relation_lists, polarity_lists = [], [], [], [], []
+
             if mode == 'train':
                 targets = [(s + 2 * token2sentid[s] + 1, e + 2 * token2sentid[s]) for s, e, t in targets]
                 aspects = [(s + 2 * token2sentid[s] + 1, e + 2 * token2sentid[s]) for s, e, t in aspects]
                 opinions = [(s + 2 * token2sentid[s] + 1, e + 2 * token2sentid[s]) for s, e, t, p in opinions]
                 opinions = list(set(opinions))
 
-                full_triplets, new_triplets = [], []
+                full_triplets = []
                 # t_s-> target_start, t_e-> target_end, etc.
                 for t_s, t_e, a_s, a_e, o_s, o_e, polarity, t_t, a_t, o_t in triplets:
                     new_index = lambda start, end : (-1, -1) if start == -1 else (start + 2 * token2sentid[start] + 1, end + 2 * token2sentid[start])
@@ -482,8 +484,7 @@ class Preprocessor:
 
                 entity_lists = target_lists + aspect_lists + opinion_lists
                 polarity_lists = self.wordpair.encode_polarity(new_triplets)
-            else:
-                new_triplets, pairs, entity_lists, relation_lists, polarity_lists = [], [], [], [], []
+
             res.append((doc_id, input_ids, input_masks, input_segments, sentence_length, nsentence_ids, utterance_index, token_index, 
                         thread_length, token2speaker, reply_mask, speaker_masks, thread_masks, pieces2words, new2old, 
                         new_triplets, pairs, entity_lists, relation_lists, polarity_lists))
@@ -491,8 +492,7 @@ class Preprocessor:
         return res
     
     def forward(self):
-        # modes default: 'train valid test'
-        modes = self.config.input_files
+        modes = 'train valid test'
         datasets = {}
 
         for mode in modes.split():
