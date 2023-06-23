@@ -13,7 +13,8 @@
 
 This repository contains data and code for the ACL23 (findings) paper: [DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis](https://arxiv.org/abs/2211.05705)
 
-Also see the [project page](https://conasq.pages.dev/) for more details.
+
+**See the [project page](https://diaasq-page.pages.dev/) for more details.**
 
 ------
 
@@ -40,9 +41,20 @@ git clone https://github.com/unikcc/DiaASQ
 In this work, we propose a new task named DiaASQ, which aims to extract Target-Aspect-Opinion-Sentiment quadruples from the given dialogue.
 More details about the task can be found in our [paper](https://arxiv.org/abs/2211.05705).
 
-<center>
-<img src="./data/fig_sample.png" width="50%" />
-</center>
+
+<p align="center">
+<img src="./data/fig_sample.png" width="40%" />
+</p>
+
+
+## DiaASQ Data
+
+The dataset can be found at:
+  ```bash
+  data/dataset
+    - jsons_en
+    - jsons_zh
+  ```
 
 
 ## Requirements
@@ -58,11 +70,6 @@ pip install -r requirements.txt
 ```
 
 ## Code Usage 
-
-+ Dataset: the dataset can be found at:
-  ```bash
-  data/dataset
-  ```
 
 + Train && Evaluate on the Chinese dataset
   ```bash 
