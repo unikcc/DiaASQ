@@ -95,10 +95,12 @@ You can set hyperparameters in `main.py` or `src/config.yaml`, and the former ha
 ## Citation
 If you use our dataset, please cite the following paper:
 ```
-@article{lietal2022arxiv,
-  title={DiaASQ: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis},
-  author={Bobo Li, Hao Fei, Fei Li, Yuhan Wu, Jinsong Zhang, Shengqiong Wu, Jingye Li, Yijiang Liu, Lizi Liao, Tat-Seng Chua, Donghong Ji}
-  journal={arXiv preprint arXiv:2211.05705},
-  year={2022}
+@inproceedings{li-2023-diaasq,
+    title = "{D}ia{ASQ}: A Benchmark of Conversational Aspect-based Sentiment Quadruple Analysis",
+    author = "Li, Bobo  and Fei, Hao and Li, Fei and Wu, Yuhan and Zhang, Jinsong and Wu, Shengqiong and Li, Jingye and
+      Liu, Yijiang and Liao, Lizi and Chua, Tat-Seng and Ji, Donghong",
+    booktitle = "Findings of ACL",
+    year = "2023",
+    pages = "13449--13467",
 }
 ```
