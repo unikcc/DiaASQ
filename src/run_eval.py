@@ -17,7 +17,7 @@ def get_token_thread(dialogue):
     sentences = dialogue['sentences']
     replies = dialogue['replies']
 
-    sentence_ids = [[i] * len(w) for i, w in enumerate(sentences)]
+    sentence_ids = [[i] * len(w.split()) for i, w in enumerate(sentences)]
     sentence_ids = [w for sent in sentence_ids for w in sent]
 
     thread_list = [[0]]
@@ -110,6 +110,16 @@ class Template:
                 if key == 'inter' and distance == 0: continue
                 res.append(tuple(comb[:7]))
             return res
+        if key in ['cross-1', 'cross-2', 'cross-3']:
+            for comb in line['triplets']:
+                if any(w == -1 for w in comb[:6]): continue
+                comb[6] = comb[6] if comb[6] in ['pos', 'neg'] else 'other'
+                distance = get_utterance_distance(line['sentence_ids'], line['dis_matrix'], comb[0], comb[2], comb[4])
+                if key == 'cross-1' and distance != 1: continue
+                if key == 'cross-2' and distance != 2: continue
+                if key == 'cross-3' and distance <3: continue
+                res.append(tuple(comb[:7]))
+            return res
         raise ValueError('Invalid key: {}'.format(key))
 
 
@@ -145,8 +155,8 @@ class Template:
 
         scores = []
         res = 'Item\tPrec.\tRec.\tF1\n'
-        items = ['targets', 'aspects', 'opinions', 'ta', 'to', 'ao', 'quad', 'iden', 'intra', 'inter']
-        item_name = ['Target', 'Aspect', 'Opinion', 'TA', 'TO', 'AO', 'Micro', 'Iden', 'Intra', 'Inter']
+        items = ['targets', 'aspects', 'opinions', 'ta', 'to', 'ao', 'quad', 'iden', 'intra', 'inter', 'cross-1', 'cross-2', 'cross-3']
+        item_name = ['Target', 'Aspect', 'Opinion', 'TA', 'TO', 'AO', 'Micro', 'Iden', 'Intra', 'Inter', 'Cross-1', 'Cross-2', 'Cross-3']
         num_format = lambda x: '\t' + '\t'.join([f'{w*100:.2f}' if i < 3 else str(w) for i, w in enumerate(x)]) + '\n'
         line_indices = [0, 3, 6, 8]
 
